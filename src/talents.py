@@ -32,10 +32,7 @@ def GET_TALENTS(pdf):
    
         page = doc[PAGE_INDEX]
         page_tables = page.find_tables().tables
-        #asdf = page_tables[TABLE_INDEX].extract()
-        #for wasd in asdf:
-        #    print(wasd[0])
-
+        
         talents = sortTalents(page_tables[TABLE_INDEX].extract(), CATEGORIES)
     return talents
        

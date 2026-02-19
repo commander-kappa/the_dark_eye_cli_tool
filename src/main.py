@@ -1,18 +1,63 @@
 import pymupdf
-import random
 from os import path
 #INFO: own module
 from talents import GET_TALENTS
+from attributes import GET_ATTRIBUTES
+from dice import ROLL_DICE
+
 
 PDF_NAME = 'herbert.pdf'
 DIR_PATH = f"{path.dirname(path.abspath(__file__))}"
 PDF_PATH = path.join(DIR_PATH, PDF_NAME)
+
+CRIT_NONE = 0
+CRIT_WIN = 1
+CRIT_LOOSE = 2
 
 class Attribut():
     def __init__(self, id, name, wert=8):
         self.id = id
         self.name = name
         self.wert = wert
+    def toStr(self):
+        return f"{self.name}: {self.wert}"
+    def doProbe(self):
+        return self.wert >= ROLL_DICE(1, 20)[0]
+
+
+class TalentProbeErgebnis():
+    def __init__(self, fw, crit):
+        if fw < 0:
+            self.qs = 0
+        elif fw == 0:
+            self.qs = 1
+        else:
+            fw = fw - 1
+            self.qs = fw // 3
+        
+        self.crit = crit
+
+    def isSuccess(self):
+        if self.crit == 1:
+            return True
+        elif self.crit == 2:
+            return False
+        elif self.qs > 0:
+            return True
+        else:
+            return False
+    
+    def getResultStr(self):
+        print(f"{self.qs}")
+        if self.isSuccess():
+            out = f"(ERFOLG) QS: {self.qs}"
+            if self.crit != CRIT_NONE:
+                out = f"(KRITISCHER {out[1:]}"
+            return out
+        else:
+            out = f"(FEHLSCHLAG) QS: {self.qs}"
+            if self.crit != CRIT_NONE:
+                out = f"(KRITISCHER {out[1:]}"
 
 
 class Talent():
@@ -23,22 +68,64 @@ class Talent():
         'D': 4
     }
     def __init__(self, name, kat, a1, a2, a3, be, stg, fw=0, r=0, an=''):
-        print(f"{a1} {a2} {a3}")
         self.name = name
         self.kategorie = kat
         self.belastung = be
         self.steigung = stg
         self.probe = [
-            getATR(a1),
-            getATR(a2),
-            getATR(a3)
-        ]
-        self.wert = fw
+            ATTRIBUTES[a1], 
+            ATTRIBUTES[a2], 
+            ATTRIBUTES[a3]
+        ] 
+        self.wert = int(fw)
         self.routine = r
         self.anmerkung = an
     
-    def parseStr(self):
-        return f"{self.name} ({self.kategorie}) [{self.probe[0].id}/{self.probe[1].id}/{self.probe[2].id}] BE:{self.belastung} R:{self.routine} FW:{self.wert} \"{self.anmerkung}\""
+    def toStr(self):
+        return f"{self.name} ({self.kategorie}) [{self.getProbeText()}] BE:{self.belastung} R:{self.routine} FW:{self.wert} \"{self.anmerkung}\""
+    def getAtrWerte(self):
+        return [
+            self.probe[0].wert,
+            self.probe[1].wert,
+            self.probe[2].wert
+        ]
+    def getProbeText(self):
+        return f"{self.probe[0].id}/{self.probe[1].id}/{self.probe[2].id}"
+    def doProbe(self, mod=0):
+        rolls = ROLL_DICE(3, 20)
+        print(f"{self.getProbeText()} => {self.getAtrWerte()} x {rolls}")
+        over = 0
+
+        crit = CRIT_NONE
+        n1 = 0; n20 = 0; p = 0
+        for i in range(3):
+            if rolls[i] == 1:
+                n1 = n1 + 1
+                p = i
+            elif rolls[i] == 20:
+                n20 = n20 + 1
+                p = i
+
+            dif = rolls[i] + mod - self.probe[i].wert
+            if dif > 0:
+                over = over + dif
+            
+        if n1 == 1 and n20 == 1:
+            crit = CRIT_NONE
+        elif n1 == 1:
+            if self.probe[p].doProbe():
+                crit = CRIT_WIN
+        elif n20 == 1:
+            if self.probe[p].doProbe():
+                crit = CRIT_LOOSE
+        elif n1 >= 2:
+            crit = CRIT_WIN
+        elif n20 >= 2:
+            crit = CRIT_LOOSE
+        
+        print(f"FW:{self.wert} - {over} = {self.wert - over}")
+        return TalentProbeErgebnis(self.wert - over, crit)
+ 
 
 HELD_NAME = 'Held_Name'
 HELD_MU = 'MU_1'
@@ -65,12 +152,12 @@ HELD_TAL = {
 ATTRIBUTES = {
     'MU': Attribut('MU', 'Mut'),
     'KL': Attribut('KL', 'Klugheit'),
-    'IN': Attribut('IN', 'Intuitiom'),
+    'IN': Attribut('IN', 'Intuition'),
     'CH': Attribut('CH', 'Charisma'),
     'FF': Attribut('FF', 'Fingerfertigkeit'),
-    'GE': Attribut('GE', 'Gewandheit'),
-    'KO': Attribut('KO', 'Konstitution'),
-    'KK': Attribut('KK', 'Körperkraft'),
+    'GE': Attribut('GE','Gewandheit'),
+    'KO': Attribut('KO','Konstitution'),
+    'KK': Attribut('KK','Körperkraft'),
 }
 
 def getATR(key):
@@ -78,6 +165,7 @@ def getATR(key):
         return ATTRIBUTES[key]
     else:
         raise Exception
+
 def PARSE_TALENT(talent):
     return Talent(
         talent[0],
@@ -92,37 +180,22 @@ def PARSE_TALENT(talent):
         talent[6]
     )
 
-TALENTS = []
+for key, value in GET_ATTRIBUTES(PDF_PATH).items():
+    ATTRIBUTES[key[:2]].wert = value
 
+for k in ATTRIBUTES.keys():
+    print(ATTRIBUTES[k].toStr())
+
+TALENTS = {}
 for talent in GET_TALENTS(PDF_PATH):
-    print(talent)
-    TALENTS.append(PARSE_TALENT(talent))
+    #print(talent)
+    x = PARSE_TALENT(talent)
+    TALENTS[x.name] = x
 
-for t in TALENTS:
-    print(t.parseStr())
+for t in TALENTS.values():
+    #print(t.toStr())
+    print('\n')
+    print(t.doProbe().getResultStr())
 
-'''
-#reader
-with pymupdf.open(PDF_NAME) as doc:
-    MIN = 2    
-    MAX = 2
 
-    for i in range(MIN - 1, MAX):
-        page = doc[i]
-        
-        for widget in page.widgets():
-            out = f"Widget: {widget.field_type}, {widget.field_name}, {widget.field_value}\n"
-            print(out)
-            if widget.field_name in HELD_TAL.keys():
-                HELD_TAL[widget.field_name] = widget.field_value
-'''
-
-class Char():
-    def __init__(
-        self,
-        name = ''
-    ):
-        self.name = name
-        self.attributes = {
-    }
-        
+print(f"{3 // 3}")
