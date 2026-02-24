@@ -5,6 +5,7 @@ CRIT_NONE = 0
 CRIT_WIN = 1
 CRIT_LOOSE = 2
 
+#TODO: All other elements of a char sheet espcially: Heldeninfo, Vor-und-Nachteile, Sonderfertigkeiten, Kampf-stats
 class Abenteurer():
     def __init__(self, name, attributWerte, talentWerte):
         self.name = name
@@ -21,7 +22,7 @@ class Abenteurer():
             if self.talente[i].talent.kategorie != k:
                 k = self.talente[i].talent.kategorie
                 print(f"======= [{k}] =======")
-            print(f"[{i:02}] {self.talente[i].toStr(withCat=False)}")
+            print(self.talente[i].toStr(withCat=False))
 
     def doProbeAttribut(self, id, mod=0):
         r = ROLL_DICE(1, 20)
@@ -37,13 +38,13 @@ class Abenteurer():
     def doProbeTalent(self, id, mod=0):
         rolls = ROLL_DICE(3, 20)
         tw = self.talente[id]
-        print(f"{tw.talent.getProbeText()} => {self.getProbeWerte(tw.talent.probe)} x {rolls}")
         
         over = 0
         crit = CRIT_NONE
 
         n1 = 0; n20 = 0; p = 0
         for i in range(3):
+            probeAttribut = self.attribute[tw.talent.probe[i]]
             if rolls[i] == 1:
                 n1 = n1 + 1
                 p = i
@@ -51,22 +52,29 @@ class Abenteurer():
                 n20 = n20 + 1
                 p = i
 
-            dif = rolls[i] - mod - self.attribute[tw.talent.probe[i]].wert
+            dif = rolls[i] - mod - probeAttribut.wert
             if dif > 0:
                 over = over + dif
-            
+        bWurf = ''
         if n1 == 1 and n20 == 1:
             crit = CRIT_NONE
         elif n1 == 1:
-            if self.attribute[tw.talent.probe[i]].doProbe():
+            r = ROLL_DICE(1, 20)[0]
+            bWurf = f"Bestätigungswurf [{probeAttribut.attribut.id}]: {probeAttribut.wert} x {r}"
+            if probeAttribut.wert >= r:
                 crit = CRIT_WIN
         elif n20 == 1:
-            if self.attribute[tw.talent.probe[i]].doProbe():
+            r = ROLL_DICE(1, 20)[0] 
+            bWurf = f"Bestätigungswurf [{probeAttribut.attribut.id}]: {probeAttribut.wert} x {r}"
+            if probeAttribut.wert < r:
                 crit = CRIT_LOOSE
         elif n1 >= 2:
             crit = CRIT_WIN
         elif n20 >= 2:
             crit = CRIT_LOOSE
         
-        print(f"FW:{tw.wert} - {over} = {tw.wert - over}")
+        print(f"roll on: {tw.toStr(formatName=False)}")
+        print(f"{self.getProbeWerte(tw.talent.probe)} x {rolls}{mod:+} = FW:{tw.wert} - {over} = {tw.wert - over}")
+        if bWurf != '':
+            print(bWurf)
         return talents.TalentProbeErgebnis(tw.wert - over, crit)

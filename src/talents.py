@@ -40,54 +40,21 @@ class TalentWert():
         self.routine = r
         self.anmerkung = an
    
-    def toStr(self, withCat=True):
+    def toStr(self, withCat=True, formatName=True):
         t = self.talent
-        
-        out = f"{t.name:<{Talent.LONGEST_NAME_LEN + 1}}"
+        spaces = 0
+        if formatName:
+            spaces = Talent.LONGEST_NAME_LEN + 1
+        else:
+            sapces = len(t.name) + 1
+
+        out = f"{t.name:<{spaces}}"
         
         if withCat:
             out += f" ({t.kategorie}) "
         
         out += f"[{t.getProbeText()}] BE:{t.belastung:<4} R:{self.routine:<4} FW:{self.wert:<2} \"{self.anmerkung}\""
         return out
-
-'''
-    def doProbe(self, attributes, mod=0):
-        rolls = ROLL_DICE(3, 20)
-        print(f"{self.talent.getProbeText()} => {self.getAtrWerte()} x {rolls}")
-        over = 0
-
-        crit = CRIT_NONE
-        n1 = 0; n20 = 0; p = 0
-        for i in range(3):
-            if rolls[i] == 1:
-                n1 = n1 + 1
-                p = i
-            elif rolls[i] == 20:
-                n20 = n20 + 1
-                p = i
-
-            dif = rolls[i] + mod - self.probe[i].wert
-            if dif > 0:
-                over = over + dif
-            
-        if n1 == 1 and n20 == 1:
-            crit = CRIT_NONE
-        elif n1 == 1:
-            if self.probe[p].doProbe():
-                crit = CRIT_WIN
-        elif n20 == 1:
-            if self.probe[p].doProbe():
-                crit = CRIT_LOOSE
-        elif n1 >= 2:
-            crit = CRIT_WIN
-        elif n20 >= 2:
-            crit = CRIT_LOOSE
-        
-        print(f"FW:{self.wert} - {over} = {self.wert - over}")
-        return TalentProbeErgebnis(self.wert - over, crit)
-    '''
-    
 
 class TalentProbeErgebnis():
     def __init__(self, fw, crit):
@@ -97,7 +64,7 @@ class TalentProbeErgebnis():
             self.qs = 1
         else:
             fw = fw - 1
-            self.qs = fw // 3
+            self.qs = 1 + fw // 3
         
         self.crit = crit
 
@@ -112,7 +79,6 @@ class TalentProbeErgebnis():
             return False
     
     def getResultStr(self):
-        print(f"{self.qs}")
         if self.isSuccess():
             out = f"(ERFOLG) QS: {self.qs}"
             if self.crit != CRIT_NONE:
@@ -143,7 +109,44 @@ def parse_talentWert(talent):
     return tw
 
 
-#if __name__ == "__main__":
-#    TALENTS = GET_TALENTS('herbert.pdf') 
-#    for e in TALENTS:
-#        print(e)
+class TestTPE():
+    TEST_ID = 0
+    TEST_YES = 0
+    TEST_NO = 0
+
+    def runTest(fw, crit, expected_qs, expected_res):
+        TestTPE.TEST_ID += 1
+        print(f"SOLL-QS:{expected_qs} SOLL-ERGEBNIS:{expected_res} FW:{fw} crit:{crit} ")
+        test = TalentProbeErgebnis(fw, crit)
+        print(f"IST-QS: {test.qs} IST-ERGEBNIS: {test.isSuccess()}")
+        if test.qs == expected_qs and test.isSuccess() == expected_res:
+            print(f"[T{TestTPE.TEST_ID:>3}] UNIT Test Sucess\n")
+            TestTPE.TEST_YES += 1
+            return True
+        else:
+            print(f"[T{TestTPE.TEST_ID:>3}] UNIT Test Failure\n")
+            TestTPE.TEST_NO += 1
+            return False
+
+if __name__ == "__main__":
+    #INFO: Unit Tests
+    TestTPE.runTest(0, CRIT_NONE, 1, True)
+    TestTPE.runTest(0, CRIT_WIN, 1, True)
+    TestTPE.runTest(-1, CRIT_NONE, 0, False)
+    TestTPE.runTest(-19, CRIT_LOOSE, 0, False)
+    TestTPE.runTest(0, CRIT_NONE, 1, True)
+    TestTPE.runTest(1, CRIT_NONE, 1, True)
+    TestTPE.runTest(2, CRIT_NONE, 1, True)
+    TestTPE.runTest(3, CRIT_NONE, 1, True)
+    TestTPE.runTest(4, 0, 2, True)
+    TestTPE.runTest(5, 0, 2, True)
+    TestTPE.runTest(6, 0, 2, True)
+    TestTPE.runTest(6, CRIT_WIN, 2, True)
+    TestTPE.runTest(6, CRIT_LOOSE, 2, False)
+    TestTPE.runTest(7, 0, 3, True)
+    TestTPE.runTest(8, 0, 3, True)
+    TestTPE.runTest(9, 0, 3, True)
+    TestTPE.runTest(10, 0, 4, True)
+    TestTPE.runTest(-1, CRIT_WIN, 0, True)
+
+    print(f"SUMMARY: {TestTPE.TEST_YES:>3} out of {TestTPE.TEST_ID:>3} SUCESSFULL")
