@@ -7,7 +7,6 @@ CRIT_LOOSE = 2
 class Talent():
     LONGEST_NAME_LEN = 0    
 
-
     #INFO: not yet in use
     stgDict = {
         'A': 1,
@@ -40,21 +39,56 @@ class TalentWert():
         self.routine = r
         self.anmerkung = an
    
-    def toStr(self, withCat=True, formatName=True):
+    def toStr(self, withCat=True, formatName=True, spaceChar='.'):
         t = self.talent
+        '''
         spaces = 0
         if formatName:
-            spaces = Talent.LONGEST_NAME_LEN + 1
+            spaces = Talent.LONGEST_NAME_LEN
         else:
-            sapces = len(t.name) + 1
+            spaces = len(t.name)
 
         out = f"{t.name:<{spaces}}"
-        
+        '''
+        out = ''
+        if formatName:
+            out = t.name.ljust(Talent.LONGEST_NAME_LEN, spaceChar) 
+            #INFO: ljust() is a build-in funciton for str alignment and padding
+        else:
+            out = t.name
+
         if withCat:
-            out += f" ({t.kategorie}) "
+            out += f" ({t.kategorie})"
         
-        out += f"[{t.getProbeText()}] BE:{t.belastung:<4} R:{self.routine:<4} FW:{self.wert:<2} \"{self.anmerkung}\""
+        out += f" [{t.getProbeText()}] BE:{t.belastung:<4} R:{self.routine:<4} FW:{self.wert:<2} \"{self.anmerkung}\""
         return out
+
+    #INFO: Implementation of a Centered category name. Didn't like how the result looked, but decided to keep it commented in code if I change my mind later
+    '''
+    def getCategorySeperator(self) -> str:
+        cat = self.talent.kategorie
+        
+        ID_LEN = len('[00] ')
+        SBS = 1 #SPACES_BETWEEN_SEPERATOR
+
+        strLen = len(self.toStr(False, True).split('\"', 1)[0]) - len(cat) + ID_LEN - (SBS*2)
+        
+
+        return f"{'='*(strLen//2)}{' '*SBS}[{cat}]{' '*SBS}{'='*((strLen//2) + strLen%2)}\n"
+    '''
+    
+    def getCategorySeperator(self, nEOL:int=1) -> str:
+        if nEOL < 0:
+            nEOL = 0
+
+        cat = self.talent.kategorie
+        ID_LEN = len('[00] ') #Default ID Format
+        SBS = 1 #SPACES_BETWEEN_SEPERATOR
+        strLen = len(self.toStr(False, True).split('\"', 1)[0]) - len(cat) - (SBS*2)
+
+        #Aurichan certified format <3
+        return f"{'\n'*nEOL}{'='*(ID_LEN)}{' '*SBS}[{cat}]{' '*SBS}{'='*strLen}{'\n'*(nEOL +1)}"
+
 
 class TalentProbeErgebnis():
     def __init__(self, fw, crit):
@@ -68,7 +102,7 @@ class TalentProbeErgebnis():
         
         self.crit = crit
 
-    def isSuccess(self):
+    def isSuccess(self) -> bool:
         if self.crit == 1:
             return True
         elif self.crit == 2:
@@ -78,7 +112,7 @@ class TalentProbeErgebnis():
         else:
             return False
     
-    def getResultStr(self):
+    def getResultStr(self) -> str:
         if self.isSuccess():
             out = f"(ERFOLG) QS: {self.qs}"
             if self.crit != CRIT_NONE:
@@ -94,7 +128,8 @@ def parse_talentWerte(talente):
     for t in talente:
         out.append(parse_talentWert(t))
     return out
-def parse_talentWert(talent):
+
+def parse_talentWert(talent) -> TalentWert:
     t = Talent(
         talent[0],
         talent[-1],
@@ -107,46 +142,3 @@ def parse_talentWert(talent):
     #INFO: might have to return t later
     tw = TalentWert(t, talent[4], talent[5], talent[6])
     return tw
-
-
-class TestTPE():
-    TEST_ID = 0
-    TEST_YES = 0
-    TEST_NO = 0
-
-    def runTest(fw, crit, expected_qs, expected_res):
-        TestTPE.TEST_ID += 1
-        print(f"SOLL-QS:{expected_qs} SOLL-ERGEBNIS:{expected_res} FW:{fw} crit:{crit} ")
-        test = TalentProbeErgebnis(fw, crit)
-        print(f"IST-QS: {test.qs} IST-ERGEBNIS: {test.isSuccess()}")
-        if test.qs == expected_qs and test.isSuccess() == expected_res:
-            print(f"[T{TestTPE.TEST_ID:>3}] UNIT Test Sucess\n")
-            TestTPE.TEST_YES += 1
-            return True
-        else:
-            print(f"[T{TestTPE.TEST_ID:>3}] UNIT Test Failure\n")
-            TestTPE.TEST_NO += 1
-            return False
-
-if __name__ == "__main__":
-    #INFO: Unit Tests
-    TestTPE.runTest(0, CRIT_NONE, 1, True)
-    TestTPE.runTest(0, CRIT_WIN, 1, True)
-    TestTPE.runTest(-1, CRIT_NONE, 0, False)
-    TestTPE.runTest(-19, CRIT_LOOSE, 0, False)
-    TestTPE.runTest(0, CRIT_NONE, 1, True)
-    TestTPE.runTest(1, CRIT_NONE, 1, True)
-    TestTPE.runTest(2, CRIT_NONE, 1, True)
-    TestTPE.runTest(3, CRIT_NONE, 1, True)
-    TestTPE.runTest(4, 0, 2, True)
-    TestTPE.runTest(5, 0, 2, True)
-    TestTPE.runTest(6, 0, 2, True)
-    TestTPE.runTest(6, CRIT_WIN, 2, True)
-    TestTPE.runTest(6, CRIT_LOOSE, 2, False)
-    TestTPE.runTest(7, 0, 3, True)
-    TestTPE.runTest(8, 0, 3, True)
-    TestTPE.runTest(9, 0, 3, True)
-    TestTPE.runTest(10, 0, 4, True)
-    TestTPE.runTest(-1, CRIT_WIN, 0, True)
-
-    print(f"SUMMARY: {TestTPE.TEST_YES:>3} out of {TestTPE.TEST_ID:>3} SUCESSFULL")

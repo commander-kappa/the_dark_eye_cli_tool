@@ -1,6 +1,8 @@
 import pymupdf
 import attributes, talents
 
+#TODO: Extract should be seperate and generate a unified .json format file
+
 def get_name_value(pdf):
     name = ''
     with pymupdf.open(pdf) as doc:
@@ -21,7 +23,6 @@ def get_attribute_values(pdf):
                 out.append(int(widget.field_value))
         return out
 
-
 def sortTalents(table, categories):
     half1 = []; half2 = []; k1 = ''; k2 = ''
     for i in range(len(table)):
@@ -38,10 +39,10 @@ def sortTalents(table, categories):
             half2.append(row[7:] + [k2])
     return half1 + half2
 
-
 def get_talent_values(pdf):
     talents = []
     with pymupdf.open(pdf) as doc:
+        #INFO: String Indicators for the german deluxe pdf!
         CATEGORIES = {
             'Körpertalente MU/GE/KK S. 188 - 194': 'Körper',
             'Wissenstalente KL/KL/IN S. 201 - 206': 'Wissen',

@@ -2,5 +2,4 @@ __pycache__
 *.pdf
 *.json
 _old*
-PATHS
-
+_test*

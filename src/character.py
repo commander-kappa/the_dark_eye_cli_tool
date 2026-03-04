@@ -7,36 +7,74 @@ CRIT_LOOSE = 2
 
 #TODO: All other elements of a char sheet espcially: Heldeninfo, Vor-und-Nachteile, Sonderfertigkeiten, Kampf-stats
 class Abenteurer():
-    def __init__(self, name, attributWerte, talentWerte):
+    #TODO: Add all Type indicators
+    #TODO: No more internal printing?!
+    def __init__(self, name:str, attributWerte, talentWerte):
         self.name = name
         self.attribute = attributes.parse_attributWerte(attributWerte)
         self.talente = talents.parse_talentWerte(talentWerte)
 
-    def showAttributes(self):
-        for key, val in self.attribute.items():
-            print(f"[{key}] {val.attribut.name}: {val.wert}")
+    def showAttributes(self, id_range=None) -> str:
+        out = ''
+        
+        if id_range is None:
+            for key, val in self.attribute.items():
+                #out += f"[{key}] {val.attribut.name:<Attribut.LONGEST_NAME_LEN}: {val.wert}\n"
+                out += val.toStr()
+        else:
+            keys = []
+            for i in range(id_range[0], id_range[1] + 1):
+                keys.append(attributes.IDS[i])
+            for key in keys:
+                val = self.attribute[key]
+                #out += f"[{key}] {val.attribut.name:<Attribut.LONGEST_NAME_LEN} {val.wert}\n"
+                out += val.toStr()
+        
+        return out
 
-    def showTalente(self):
+    def showTalente(self, id_range=None) -> str:
+        out = ''
+        
+        if id_range is None:
+            id_range = range(len(self.talente))
+        else:
+            for id in id_range:
+                if id >= len(self.talente) or id < (len(self.talente)) * -1: #INFO: negative indexiation is an intended feature!
+                    return f"ERROR: Talent ID [{id}] is out of range"
+            id_range = range(id_range[0], id_range[1] + 1)
+    
         k = ''
-        for i in range(len(self.talente)):
+        for i in id_range:
             if self.talente[i].talent.kategorie != k:
                 k = self.talente[i].talent.kategorie
-                print(f"======= [{k}] =======")
-            print(self.talente[i].toStr(withCat=False))
+                #out += f"======= [{k}] =======\n"
+                out += self.talente[i].getCategorySeperator()
+            out += f"[{i:02}] " + self.talente[i].toStr(withCat=False) + '\n'
+        
+        return out
 
-    def doProbeAttribut(self, id, mod=0):
+    def doProbeAttribut(self, id:int, mod:int=0) -> str:
         r = ROLL_DICE(1, 20)
-        print(self.attribute[id].toStr())
-        if r[0] > self.attribute[id].wert + mod:
-            print(f"(FEHLSCHLAG) {r[0]}")
+
+        out = self.attribute[id].toStr() + "\n"
+        if r[0] + mod > self.attribute[id].wert:
+            out += f"(FEHLSCHLAG) {r[0]} {mod:+}"
         else:
-            print(f"(ERFOLG) {r[0]}")
-    
-    def getProbeWerte(self, probe):
+            out += f"(ERFOLG) {r[0]} {mod:+}"
+        
+        return out
+
+    def getProbeWerte(self, probe) -> str:
         return f"{self.attribute[probe[0]].wert}/{self.attribute[probe[1]].wert}/{self.attribute[probe[2]].wert}"
     
-    def doProbeTalent(self, id, mod=0):
+    def doProbeTalent(self, id:int, mod:int=0) -> talents.TalentProbeErgebnis:
         rolls = ROLL_DICE(3, 20)
+        
+        if abs(id) + 1 > len(self.talente):
+            print(f"ERROR: Talent ID [{id}] is out of range")
+            #TODO: Find fitting return type
+            raise Exception
+        
         tw = self.talente[id]
         
         over = 0
@@ -52,7 +90,7 @@ class Abenteurer():
                 n20 = n20 + 1
                 p = i
 
-            dif = rolls[i] - mod - probeAttribut.wert
+            dif = rolls[i] + mod - probeAttribut.wert
             if dif > 0:
                 over = over + dif
         bWurf = ''
@@ -73,8 +111,10 @@ class Abenteurer():
         elif n20 >= 2:
             crit = CRIT_LOOSE
         
+        #TODO: find a solution for bWurf and the return. Maybe return getResultStr() here and dont let cli resolve to str
         print(f"roll on: {tw.toStr(formatName=False)}")
         print(f"{self.getProbeWerte(tw.talent.probe)} x {rolls}{mod:+} = FW:{tw.wert} - {over} = {tw.wert - over}")
         if bWurf != '':
             print(bWurf)
+        #Is this class actually needed?! Especially once I'm sold on using one string return.
         return talents.TalentProbeErgebnis(tw.wert - over, crit)
