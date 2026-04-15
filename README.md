@@ -1,5 +1,10 @@
-# the_dark_eye_cli_tool
-Access your character data (exported from a pdf sheet or Optolith) and roll on your stats from the command line
+# The Dark Eye (5th Edition) CLI Tool
+*Access your character data (from the official pdf sheet or Optolith .json) and roll on your stats from the command line*
 
-IMPORTANT INFO: Currently ONLY works with the 5th editi german and official deluxe character sheet! For copyright reasons I am, unfortunately, not able to provide you a copy of said character sheet. I am planning to implement a json parser that return a .json file equivalent to the one from Optolith
-Specify the pdf file name in the default.ini fil!!
+**IMPORTANT INFO: PDF Conversion currently ONLY works with the GERMAN OFFICIAL deluxe character sheet!**
+For copyright reasons I am, unfortunately, not able to provide you a copy of said character sheet.
+
+The .json file will be picked:
+1. By a CLI argument during start (python main.py **character.json**)
+2. By an **JSON=character.json** entry in default.ini
+3. By manual entry from the programm command line
