@@ -1,49 +1,37 @@
+import os, sys
 from os import path
-import traceback
-#INFO: own modules
-import character, extract_deluxe_pdf
-from dice import ROLL_DICE
-import cli
-from cli import cli_main
+import character, parse_json, helper
+from cli import cli_main, EYE_ASCII_ART
 
-EXTRACT_MODE='PDF'
+if __name__ == '__main__':
+    DIR_PATH = f"{path.dirname(path.abspath(__file__))}"
+    INI_NAME = 'default.ini'
+    INI_PATH = path.join(DIR_PATH, INI_NAME)
+    JSON_NAME = 'herbert.json'
 
-#TODO: I should probably abandon the live PDF approach and instead write a json parser
+    if len(sys.argv[1:]) >= 1:
+        JSON_NAME = sys.argv[1]
+    else:
+        with open(INI_PATH, 'r') as ini:
+            for line in ini:
+                try:
+                    pair = line.split('=', 2)
+                    pair[1] = pair[1].replace('\n', '')
+                    if pair[0] == 'JSON':
+                        JSON_NAME = pair[1]
+                except:
+                    print("ERROR: INI could not be parsed")
+    
+    JSON_PATH = path.join(DIR_PATH, JSON_NAME)
 
-DIR_PATH = f"{path.dirname(path.abspath(__file__))}"
+    while not path.exists(JSON_PATH):
+        print(f"File '{JSON_PATH}' does not exist!")
+        JSON_PATH = path.join(
+            DIR_PATH,
+            helper.validator_loop('Enter new file name => ', 'json')
+        )
 
-INI_NAME = 'default.ini'
-INI_PATH = path.join(DIR_PATH, INI_NAME)
+    CHAR = character.Abenteurer(parse_json.get_json_from_file(JSON_PATH)) 
 
-PDF_NAME = 'default.pdf'
-
-#INFO: ini parser BETA
-with open(INI_PATH, 'r') as ini:
-    for line in ini:
-        try:
-            pair = line.split('=', 2)
-            pair[1] = pair[1].replace('\n', '')
-            
-            if pair[0] == 'PDF':
-                PDF_NAME = pair[1]
-            if pair[0] == 'JSON':
-                pass #INFO: JSON NOT YET IMPLEMENTED!
-            
-        except:
-            print("ERROR: INI could not be parsed")
-            input("press enter to exit programm...")
-            exit()
-
-PDF_PATH = path.join(DIR_PATH, PDF_NAME)
-
-CHAR = character.Abenteurer(
-    extract_deluxe_pdf.get_name_value(PDF_PATH),
-    extract_deluxe_pdf.get_attribute_values(PDF_PATH),
-    extract_deluxe_pdf.get_talent_values(PDF_PATH)
-)
-
-
-#INFO: New CLI in cli.py
-
-print(cli.EYE_ASCII_ART)
-cli_main(char=CHAR)
+    print(EYE_ASCII_ART)
+    cli_main(char=CHAR)

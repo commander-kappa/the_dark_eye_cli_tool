@@ -1,4 +1,5 @@
 from dice import ROLL_DICE
+from data import TALENTS
 
 CRIT_NONE = 0
 CRIT_WIN = 1
@@ -14,8 +15,16 @@ class Talent():
         'C': 3,
         'D': 4
     }
-
-    def __init__(self, name, kat, a1, a2, a3, be, stg):
+    #Replace aN: str wioth a: Attribute()?
+    def __init__(self, 
+                    name: str,
+                    kat: str, 
+                    a1 :str, 
+                    a2 :str, 
+                    a3 :str, 
+                    be: str, 
+                    stg: str
+    ):
         self.name = name
         self.kategorie = kat
         self.belastung = be
@@ -26,14 +35,22 @@ class Talent():
         if len(self.name) > Talent.LONGEST_NAME_LEN:
             Talent.LONGEST_NAME_LEN = len(self.name)
 
-    def toStr(self):
+    def toStr(self) -> str:
         return f"{self.name} ({self.kategorie}) [{self.getProbeText()}] BE:{self.belastung} R:{self.routine} FW:{self.wert} \"{self.anmerkung}\""
-    
+    def toDict(self) -> dict:
+        return {
+            "name": self.name,
+            "kat": self.kategorie,
+            "be": self.belastung,
+            "stg": self.steigung,
+            "probe": self.probe,
+            }
+
     def getProbeText(self):
         return f"{self.probe[0]}/{self.probe[1]}/{self.probe[2]}"
 
 class TalentWert():
-    def __init__(self, talent, fw=0, r=0, an=''):
+    def __init__(self, talent:Talent, fw=0, r=0, an:str=''):
         self.talent = talent
         self.wert = int(fw)
         self.routine = r
@@ -41,15 +58,6 @@ class TalentWert():
    
     def toStr(self, withCat=True, formatName=True, spaceChar='.'):
         t = self.talent
-        '''
-        spaces = 0
-        if formatName:
-            spaces = Talent.LONGEST_NAME_LEN
-        else:
-            spaces = len(t.name)
-
-        out = f"{t.name:<{spaces}}"
-        '''
         out = ''
         if formatName:
             out = t.name.ljust(Talent.LONGEST_NAME_LEN, spaceChar) 
@@ -62,21 +70,13 @@ class TalentWert():
         
         out += f" [{t.getProbeText()}] BE:{t.belastung:<4} R:{self.routine:<4} FW:{self.wert:<2} \"{self.anmerkung}\""
         return out
+    def toDict(self) -> dict:
+        out = self.talent.toDict()
+        out['fw'] = self.wert
+        out['r'] = self.routine
+        out['an'] = self.anmerkung
+        return out
 
-    #INFO: Implementation of a Centered category name. Didn't like how the result looked, but decided to keep it commented in code if I change my mind later
-    '''
-    def getCategorySeperator(self) -> str:
-        cat = self.talent.kategorie
-        
-        ID_LEN = len('[00] ')
-        SBS = 1 #SPACES_BETWEEN_SEPERATOR
-
-        strLen = len(self.toStr(False, True).split('\"', 1)[0]) - len(cat) + ID_LEN - (SBS*2)
-        
-
-        return f"{'='*(strLen//2)}{' '*SBS}[{cat}]{' '*SBS}{'='*((strLen//2) + strLen%2)}\n"
-    '''
-    
     def getCategorySeperator(self, nEOL:int=1) -> str:
         if nEOL < 0:
             nEOL = 0
@@ -123,6 +123,20 @@ class TalentProbeErgebnis():
                 out = f"(KRITISCHER {out[1:]}"
         return out
 
+DATA = []
+for t in TALENTS:
+    DATA.append(Talent(
+        t['name'],
+        t['kat'],
+        t['probe'][0],
+        t['probe'][1],
+        t['probe'][2],
+        t['be'],
+        t['stg'],
+    ))
+
+
+#TODO: DELETE!
 def parse_talentWerte(talente):
     out = []
     for t in talente:
@@ -139,6 +153,5 @@ def parse_talentWert(talent) -> TalentWert:
         talent[2],
         talent[3]
     )
-    #INFO: might have to return t later
     tw = TalentWert(t, talent[4], talent[5], talent[6])
     return tw

@@ -122,7 +122,8 @@ def cli_main(mode='main', char:character.Abenteurer=None) -> None:
                                 print(select_help(id))
                             case _:
                                 raise Exception
-                except:
+                except Exception as e:
+                    print(e)
                     print("ERROR: Could not execute roll")
                 continue
             #------------- SHOW -------------#
@@ -137,8 +138,7 @@ def cli_main(mode='main', char:character.Abenteurer=None) -> None:
                             case 't':
                                 print(char.showTalente(id_range))
                             case 'i':
-                                #INFO: Will be expanded as character sheet grows!
-                                print(f"Character Name: {char.name}")
+                                print(char.showInfo())
                             case _:
                                 raise Exception
                     continue
@@ -245,8 +245,8 @@ def parse_range_str(r:str):
     #TODO: Filter cross selection between talents and attributes?
     for i in range(len(parts)):
         #Needs a more distinct method later, ig.
-        if parts[i].upper() in character.attributes.IDS:
-            parts[i] = character.attributes.IDS.index(parts[i].upper())
+        if parts[i].upper() in character.attributes.DATA:
+            parts[i] = character.attributes.DATA.index(parts[i].upper())
         else:
             try:
                 #TODO: add abs() ?

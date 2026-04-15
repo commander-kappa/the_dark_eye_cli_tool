@@ -1,4 +1,5 @@
 from dice import ROLL_DICE
+from data import ATTRIBUTES
 
 #INFO: Unsure whether I should stay with german class Names. I feel like i mix those 2 languages too often here
 class Attribut():
@@ -9,7 +10,6 @@ class Attribut():
         
         if len(self.name) > Attribut.LONGEST_NAME_LEN:
             Attribut.LONGEST_NAME_LEN = len(self.name)
-
 
 class AttributWert():
     def __init__(self, attribut: Attribut, wert: int = 8):
@@ -22,30 +22,6 @@ class AttributWert():
     def doProbe(self) -> bool:
         return self.wert >= ROLL_DICE(1, 20)[0]
 
-
-# hab ich das bisher überhaupt iwo genutzt?!
-class AttributCollection():
-    def __init__(self, atrWerte):
-        self.collection = {}
-        for atrWert in atrWerte:
-            self.collection[atrWert.attribut.id] = atrWert        
-
-
-#INFO: This concept may be improved in the future
-IDS = ['MU','KL','IN','CH','FF','GE','KO','KK']
-ATTRIBUTES = {
-    'MU': Attribut('MU', 'Mut'),
-    'KL': Attribut('KL', 'Klugheit'),
-    'IN': Attribut('IN', 'Intuition'),
-    'CH': Attribut('CH', 'Charisma'),
-    'FF': Attribut('FF', 'Fingerfertigkeit'),
-    'GE': Attribut('GE', 'Gewandheit'),
-    'KO': Attribut('KO', 'Konstitution'),
-    'KK': Attribut('KK', 'Körperkraft'),
-}
-
-def parse_attributWerte(werte):
-    out = {} 
-    for i in range(len(werte)):
-        out[IDS[i]] = AttributWert(ATTRIBUTES[IDS[i]], werte[i])
-    return out
+DATA = []
+for key, val in ATTRIBUTES.items():
+    DATA.append(Attribut(key, val))
