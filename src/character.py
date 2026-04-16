@@ -39,11 +39,11 @@ class Abenteurer():
             if id in json['talents']:
                 val = json['talents'][id]
             if id in json['talents_notes']:
-                print(an)
                 an  = json['talents_notes'][id]
             
             self.talentValues.append(talents.TalentWert(talents.DATA[i], val, 0, an))
             
+    #TODO: not all info stats implemented yet!
     def showInfo(self) -> str:
         out = ""
 
@@ -91,8 +91,9 @@ class Abenteurer():
             id_range = range(len(self.talentValues))
         else:
             for id in id_range:
-                if id >= len(self.talentValues) or id < (len(self.talente)) * -1: #INFO: negative indexiation is an intended feature!
-                    return f"ERROR: Talent ID [{id}] is out of range"
+                if id >= len(self.talentValues) or id < (len(self.talentValues)) * -1: #INFO: negative indexiation is an intended feature!
+                    print(f"ERROR: Talent ID [{id}] is out of range")
+                    raise IndexError
             id_range = range(id_range[0], id_range[1] + 1)
     
         k = ''
@@ -139,7 +140,7 @@ class Abenteurer():
         if abs(id) + 1 > len(self.talentValues):
             print(f"ERROR: Talent ID [{id}] is out of range")
             #TODO: Find fitting return type
-            raise Exception
+            raise IndexError
         
         tw = self.talentValues[id]
         

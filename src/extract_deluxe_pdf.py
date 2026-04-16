@@ -4,9 +4,7 @@ import os, sys, re, json
 from os import path
 from helper import remove_non_numbers as rm_NaN
 from helper import validate_file_name, validator_loop, create_empty_json
-
-DIR_PATH = f"{path.dirname(path.abspath(__file__))}"
-
+import helper
 
 def extract_char_info(pdf: str) -> dict:
     info = {
@@ -149,10 +147,10 @@ def filter_raw_talents(raw_talents):
     return out
 
 
-def convert_pdf(file_name: str) -> None:
+def convert_pdf(file_path:str, file_name:str) -> None:
     file_name = file_name.replace('.pdf', '')
-    pdf_path = os.path.join(DIR_PATH, file_name + '.pdf') 
-    json_path = os.path.join(DIR_PATH, file_name + '.json')
+    pdf_path = os.path.join(file_path, file_name + '.pdf') 
+    json_path = os.path.join(file_path, file_name + '.json')
     
     if not os.path.exists(pdf_path):
         raise FileNotFoundError
@@ -173,17 +171,15 @@ def convert_pdf(file_name: str) -> None:
         i += 1
         json_object['attr']['values'].append({'id': f"ATTR_{i}", 'value': a})  
 
-    if os.path.exists(json_path):
+    while os.path.exists(json_path):
         print(f"WARNING: '{file_name}.json' already exists! Do you wish to overwrite?")
-        while True:
-            p = input("[y/n] => ")
-            if p == 'y':
-                break
-            if p == 'n':
-                file_name = validator_loop('Enter new json file name => ', 'json')
-                file_name = file_name.replace('.json', '')
-                json_path = os.path.join(DIR_PATH, file_name + '.json')
-                break
+        p = input("[y/n] => ")
+        if p == 'y':
+            break
+        if p == 'n':
+            file_name = validator_loop('Enter new json file name => ', 'json')
+            file_name = file_name.replace('.json', '')
+            json_path = os.path.join(file_path, file_name + '.json')
     
     with open(json_path, 'w') as json_file:
         json.dump(json_object, json_file)
@@ -191,16 +187,22 @@ def convert_pdf(file_name: str) -> None:
 
 if __name__ == '__main__':
     files = []
-    if len(sys.argv[1:]) < 1:
-        #INFO: Enter name via python programm
+    dir_path = helper.DIR_PATH
+
+    #1) Get .pdf from sys args
+    if len(sys.argv[1:]) >= 1:
+        files = sys.argv[1:]
+        dir_path = os.getcwd()
+    
+    #2) Get .pdf from manual entry within res dir
+    else: 
+        helper.init_res_dir()
         file_name = validator_loop('Enter pdf file name => ', 'pdf')
         files.append(file_name)
-    else:
-        files = sys.argv[1:]
 
     for file_name in files:
         try:
-            convert_pdf(file_name)
+            convert_pdf(dir_path, file_name)
         except FileNotFoundError as f:
             print(f"ERROR: '{file_name}.pdf' not found!")
             print(f)

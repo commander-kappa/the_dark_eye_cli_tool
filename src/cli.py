@@ -50,7 +50,6 @@ ROLL_MENU_TEXT = f"""Type one of the following options:
 [a] Roll on Attribute [ID] [(Mod)]
 [t] Roll on Talent    [ID] [(Mod)]
 [d] Roll Dice [Size] [(times) = 1]
-[exam] Get examples for the roll command 
 [help] Print help text
 [show] Switches to show mode
 [main] returns to main menu
