@@ -1,0 +1,3 @@
+CRIT_NONE = 0
+CRIT_WIN = 1
+CRIT_FAIL = 2

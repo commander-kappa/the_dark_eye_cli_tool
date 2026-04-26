@@ -22,10 +22,10 @@ class Abenteurer():
         #INFO: Optolith .json IS NOT sorted and doesnt c asontain default values! 
         
         for i in range(8):
-            #Attrbut.id -> Attribut()
+            #Attrbut.id -> Attribute()
             #INFO: this means the id is redundantely stored (both as the key of self.attributeValuess AND in the value of AttributWert)
             #TODO: find a better universal solution?
-            self.attributeValues[attributes.DATA[i].id] = attributes.AttributWert(attributes.DATA[i], 8)
+            self.attributeValues[attributes.DATA[i].id] = attributes.AttributeValue(attributes.DATA[i], 8)
         
         for attr in json['attr']['values']:
             i = int(rm_NaN(attr['id'])) - 1
@@ -105,32 +105,10 @@ class Abenteurer():
         
         return out
 
-#TODO: ProbeClass with toStr() instead of returning Output string
-    def doProbeAttribut(self, id:int, mod:int=0) -> str:
-        r = ROLL_DICE(1, 20)[0]        
-        val = self.attributeValues[id].wert
+    def doAttributeCheck(self, id:int, mod:int=0) -> attributes.AttributeCheck:
+        return self.
 
-        out = self.attributeValues[id].toStr()
-        
-        r2_txt = ''
-        if r == 1:
-            r2 = ROLL_DICE(1, 20)[0]
-            if r2 <= val:
-                return out + f"(KRITISCHER ERFOLG) [{r}, {r2}]\n"
-            else:
-                r2_txt = f", {r2}"
-        elif r == 20:
-            r2 = ROLL_DICE(1, 20)[0]
-            if r2 > val:
-                return out + f"(KRITISCHER FEHLSCHLAG) [{r}, {r2}]\n"
-            else:
-                r2_txt = f", {r2}"
-        
-        if r + mod > val:
-            return out + f"(FEHLSCHLAG) [{r}{r2_txt}] {mod:+}\n"
-        else:
-            return out + f"(ERFOLG) [{r}{r2_txt}] {mod:+}\n"
-        
+
     def getProbeWerte(self, probe) -> str:
         return f"{self.attributeValues[probe[0]].wert}/{self.attributeValues[probe[1]].wert}/{self.attributeValues[probe[2]].wert}"
     
