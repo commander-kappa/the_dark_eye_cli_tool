@@ -1,10 +1,9 @@
 import os, sys
 from os import path
-import character, parse_json, helper
-from cli import cli_main, EYE_ASCII_ART
+import character, parse_json, helper, cli
 
-if __name__ == '__main__':
-    #INFO DIR_PATH changed to 'res'
+def main():
+    #INFO: DIR_PATH changed to 'res'
     DIR_PATH = helper.DIR_PATH
     INI_NAME = 'default.ini'
     INI_PATH = path.join(DIR_PATH, INI_NAME)
@@ -14,6 +13,7 @@ if __name__ == '__main__':
     if len(sys.argv[1:]) >= 1: 
         JSON_NAME = sys.argv[1]
         DIR_PATH = os.getcwd()
+        
     #2) Get .json from default.ini
     else:
         try:
@@ -39,7 +39,10 @@ if __name__ == '__main__':
             helper.validator_loop('Enter new file name => ', 'json')
         )
 
-    CHAR = character.Abenteurer(parse_json.get_json_from_file(JSON_PATH)) 
+    CHAR = character.Character(parse_json.get_json_from_file(JSON_PATH)) 
 
-    print(EYE_ASCII_ART)
-    cli_main(char=CHAR)
+    print(cli.EYE_ASCII_ART)
+    cli.main(char=CHAR)
+
+if __name__ == '__main__':
+    main()

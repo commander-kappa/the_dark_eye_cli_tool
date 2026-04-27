@@ -3,7 +3,7 @@ import attributes, talents, data
 import os, sys, re, json
 from os import path
 from helper import remove_non_numbers as rm_NaN
-from helper import validate_file_name, validator_loop, create_empty_json
+from parse_json import validate_file_name, validator_loop, create_empty_json
 import helper
 
 def extract_char_info(pdf: str) -> dict:
@@ -103,7 +103,7 @@ def extract_attribute_values(pdf: str) -> list:
 
 
 
-#TODO: old extraction functions are now redundant and must be replaced
+#TODO: old extraction functions are now redundant and should be replaced
 def sort_raw_talents(table, categories) -> list:
     half1 = []; half2 = []; k1 = ''; k2 = ''
     for i in range(len(table)):
@@ -185,7 +185,7 @@ def convert_pdf(file_path:str, file_name:str) -> None:
         json.dump(json_object, json_file)
 
 
-if __name__ == '__main__':
+def main():
     files = []
     dir_path = helper.DIR_PATH
 
@@ -206,4 +206,6 @@ if __name__ == '__main__':
         except FileNotFoundError as f:
             print(f"ERROR: '{file_name}.pdf' not found!")
             print(f)
-        
+
+if __name__ == '__main__':
+    main()        

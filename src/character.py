@@ -2,14 +2,8 @@ import talents, attributes
 from dice import ROLL_DICE
 from helper import remove_non_numbers as rm_NaN
 
-CRIT_NONE = 0
-CRIT_WIN = 1
-CRIT_LOOSE = 2
-
 #TODO: All other elements of a char sheet espcially: Heldeninfo, Vor-und-Nachteile, Sonderfertigkeiten, Kampf-stats
-class Abenteurer():
-    #TODO: Add all Type indicators
-    #TODO: No more internal printing?!
+class Character():
     def __init__(self, json: dict):
         self.info = {
             'name': json['name'],
@@ -19,18 +13,18 @@ class Abenteurer():
             self.info[key] = val
         
         self.attributeValues = {}
-        #INFO: Optolith .json IS NOT sorted and doesnt c asontain default values! 
+        #INFO: Optolith .json IS NOT sorted and doesnt contain default values! 
         
         for i in range(8):
             #Attrbut.id -> Attribute()
-            #INFO: this means the id is redundantely stored (both as the key of self.attributeValuess AND in the value of AttributWert)
+            #INFO: this means the id is redundantely stored (both as the key of self.attributeValuess AND in the value of AttributeValue)
             #TODO: find a better universal solution?
             self.attributeValues[attributes.DATA[i].id] = attributes.AttributeValue(attributes.DATA[i], 8)
         
         for attr in json['attr']['values']:
             i = int(rm_NaN(attr['id'])) - 1
             id = attributes.DATA[i].id
-            self.attributeValues[id].wert = attr['value']
+            self.attributeValues[id].value = attr['value']
 
         self.talentValues = []
         for i in range(len(talents.DATA)):
@@ -41,7 +35,7 @@ class Abenteurer():
             if id in json['talents_notes']:
                 an  = json['talents_notes'][id]
             
-            self.talentValues.append(talents.TalentWert(talents.DATA[i], val, 0, an))
+            self.talentValues.append(talents.TalentValue(talents.DATA[i], val, 0, an))
             
     #TODO: not all info stats implemented yet!
     def showInfo(self) -> str:
@@ -69,7 +63,7 @@ class Abenteurer():
             out += f"{key}{SPACE_CHAR*(columnSize - len(key))} {val}\n"        
         return out
 
-    def showAttributes(self, id_range=None) -> str:
+    def showAttributes(self, id_range:list=None) -> str:
         out = ''
         
         if id_range is None:
@@ -84,7 +78,7 @@ class Abenteurer():
         
         return out
 
-    def showTalente(self, id_range=None) -> str:
+    def showTalente(self, id_range:list=None) -> str:
         out = ''
         
         if id_range is None:
@@ -92,79 +86,27 @@ class Abenteurer():
         else:
             for id in id_range:
                 if id >= len(self.talentValues) or id < (len(self.talentValues)) * -1: #INFO: negative indexiation is an intended feature!
-                    print(f"ERROR: Talent ID [{id}] is out of range")
-                    raise IndexError
+                    raise IndexError(f"Talent ID [{id}] is out of range")
             id_range = range(id_range[0], id_range[1] + 1)
     
         k = ''
         for i in id_range:
-            if self.talentValues[i].talent.kategorie != k:
-                k = self.talentValues[i].talent.kategorie
+            if self.talentValues[i].talent.category != k:
+                k = self.talentValues[i].talent.category
                 out += self.talentValues[i].getCategorySeperator()
             out += f"[{i:02}] " + self.talentValues[i].toStr(withCat=False) + '\n'
         
         return out
 
-    def doAttributeCheck(self, id:int, mod:int=0) -> attributes.AttributeCheck:
-        return self.
+    def doAttributeCheck(self, id:str, mod:int=0) -> attributes.AttributeCheck:
+        return attributes.AttributeCheck(self.attributeValues[id], mod)
 
+    def doTalentCheck(self, id:int, mod:int=0) -> talents.TalentCheck:
+        attrVals = []
+        talentValue = self.talentValues[id]
+        for attr_id in talentValue.talent.check:
+            attrVals.append(self.attributeValues[attr_id].value)
+        return talents.TalentCheck(attrVals, talentValue.value, mod)
 
-    def getProbeWerte(self, probe) -> str:
-        return f"{self.attributeValues[probe[0]].wert}/{self.attributeValues[probe[1]].wert}/{self.attributeValues[probe[2]].wert}"
-    
-    def doProbeTalent(self, id:int, mod:int=0, control_crit:bool=False) -> talents.TalentProbeErgebnis:
-        rolls = ROLL_DICE(3, 20)
-        
-        if abs(id) + 1 > len(self.talentValues):
-            print(f"ERROR: Talent ID [{id}] is out of range")
-            #TODO: Find fitting return type
-            raise IndexError
-        
-        tw = self.talentValues[id]
-        
-        over = 0
-        crit = CRIT_NONE
-
-        n1 = 0; n20 = 0; p = 0
-        for i in range(3):
-            probeAttribut = self.attributeValues[tw.talent.probe[i]]
-            if rolls[i] == 1:
-                n1 = n1 + 1
-                p = i
-            elif rolls[i] == 20:
-                n20 = n20 + 1
-                p = i
-
-            dif = rolls[i] + mod - probeAttribut.wert
-            if dif > 0:
-                over = over + dif
-
-#INFO: bestätigunswurf is not rule compliant for talents! :( but i'll keep it here for homebrew rules
-        bWurf = ''
-        if control_crit:
-            if n1 == 1 and n20 == 1:
-                crit = CRIT_NONE
-            elif n1 == 1:
-                r = ROLL_DICE(1, 20)[0]
-                bWurf = f"Bestätigungswurf [{probeAttribut.attribut.id}]: {probeAttribut.wert} x {r}"
-                if probeAttribut.wert >= r:
-                    crit = CRIT_WIN
-            elif n20 == 1:
-                r = ROLL_DICE(1, 20)[0] 
-                bWurf = f"Bestätigungswurf [{probeAttribut.attribut.id}]: {probeAttribut.wert} x {r}"
-                if probeAttribut.wert < r:
-                    crit = CRIT_LOOSE
-        
-        #elif n1 >= 2:
-        if n1 >= 2:
-            crit = CRIT_WIN
-        elif n20 >= 2:
-            crit = CRIT_LOOSE
-        
-        #TODO: find a solution for bWurf and the return. Maybe return getResultStr() here and dont let cli resolve to str
-        print(f"roll on: {tw.toStr(formatName=False)}")
-        print(f"{self.getProbeWerte(tw.talent.probe)} x {rolls}{mod:+} = FW:{tw.wert} - {over} = {tw.wert - over}")
-        if bWurf != '':
-            print(bWurf)
-        #Is this class actually needed?! Especially once I'm sold on using one string return.
-        return talents.TalentProbeErgebnis(tw.wert - over, crit)
+    def getCheckValuesText(self, check) -> str:
+        return f"{self.attributeValues[check[0]].value}/{self.attributeValues[check[1]].value}/{self.attributeValues[check[2]].value}"

@@ -79,7 +79,9 @@ ROLL_EXAMPLE_TEXT = f"""Examples for roll command:
 
 import traceback
 
-def cli_main(mode='main', char:character.Abenteurer=None) -> None:    
+#TODO: needs a massive simplification and overhault...
+#TODO: CLI custom Exception handling
+def main(mode='main', char:character.Abenteurer=None) -> None:    
     print(select_help(mode))
     while True:
         p = input(f"({mode}) => ")
@@ -114,13 +116,13 @@ def cli_main(mode='main', char:character.Abenteurer=None) -> None:
                             case 'd':
                                 print(f"Roll {mod}d{id} = {ROLL_DICE(mod, id)}")
                             case 'a':
-                                print(char.doProbeAttribut(id, mod))
+                                print(f"{char.attributeValues[id].toStr(formatName = False)}{char.doAttributeCheck(id, mod).toStr()}")
                             case 't':
-                                print(char.doProbeTalent(id, mod).getResultStr() + "\n")
+                                print(f"[{id:02}] {char.talentValues[id].toStr(formatName = False)}\n{char.doTalentCheck(id, mod).toStr()}")
                             case 'h':
                                 print(select_help(id))
                             case _:
-                                raise Exception
+                                raise ValueError
                 except Exception as e:
                     print(e)
                     print("ERROR: Could not execute roll")
@@ -139,7 +141,7 @@ def cli_main(mode='main', char:character.Abenteurer=None) -> None:
                             case 'i':
                                 print(char.showInfo())
                             case _:
-                                raise Exception
+                                raise ValueError
                     continue
                 except:
                     print("ERROR: Could not show")
@@ -363,4 +365,4 @@ def parse_roll_prompt(p:str):
 
 if __name__ == "__main__":
     print('you are running cli.py')
-    cli_main()
+    main()
